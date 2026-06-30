@@ -18,7 +18,7 @@ DCOBJS     = $(addsuffix d,  $(COBJS))
 RCOBJS     = $(addsuffix r,  $(COBJS))
 
 #CXX        ?= /usr/gcc-/bin/g++-4.7.0
-CXX       ?= g++-16
+CXX       ?= g++
 CFLAGS    ?= -Wall -Wno-parentheses
 LFLAGS    ?= -Wall
 

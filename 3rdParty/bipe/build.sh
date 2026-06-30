@@ -49,10 +49,20 @@ cd $curRep
 mkdir -p build
 cd build
 
-cmake -G "Unix Makefiles" .. -DBUILD_MODE=$opt \
-      -DCMAKE_C_COMPILER=gcc-16 -DCMAKE_CXX_COMPILER=g++-16
-make -j
+# macOS: Unix Makefiles generator + Homebrew toolchain; Linux: original Ninja build.
+if [ "$(uname)" = "Darwin" ]; then
+    cmake -G "Unix Makefiles" .. -DBUILD_MODE=$opt \
+          -DCMAKE_C_COMPILER=gcc-16 -DCMAKE_CXX_COMPILER=g++-16
+    make -j
+else
+    cmake -GNinja .. -DBUILD_MODE=$opt
+    ninja
+fi
 
-# macOS libtool -static instead of GNU ar thin-archive/MRI merge (unsupported by macOS ar).
 mv libbipe.a libbipetmp.a
-libtool -static -o libbipe.a libbipetmp.a ../3rdParty/glucose-3.0/core/libglucose.a
+if [ "$(uname)" = "Darwin" ]; then
+    # macOS ar lacks GNU ar's thin-archive/MRI modes; use libtool -static.
+    libtool -static -o libbipe.a libbipetmp.a ../3rdParty/glucose-3.0/core/libglucose.a
+else
+    ar cqT libbipe.a libbipetmp.a ../3rdParty/glucose-3.0/core/libglucose.a && echo -e 'create libbipe.a\naddlib libbipe.a\nsave\nend' | ar -M
+fi

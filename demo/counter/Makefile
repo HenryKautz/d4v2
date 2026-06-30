@@ -3,19 +3,23 @@ EXEC ?= counter
 BUILD_DIR ?= build
 SRC_DIRS ?= src
 
-# Build with the Homebrew GNU toolchain rather than Apple clang.
-CXX := g++-16
-
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 CPPFLAGS ?= -MMD -MP
-# boost::program_options is linked from our OWN g++-16 (libstdc++) build of it -- the
-# Homebrew libboost_program_options.a is clang/libc++ and is ABI-incompatible with g++.
-# gmp/gmpxx are C-ABI (fine) and come from Homebrew (-L/opt/homebrew/lib).
+
+ifeq ($(shell uname),Darwin)
+# macOS: Homebrew GNU toolchain.  boost::program_options is linked from our OWN g++
+# (libstdc++) build of it -- Homebrew's libboost_program_options.a is clang/libc++
+# and ABI-incompatible with g++.  gmp/gmpxx are C-ABI (fine), from Homebrew.
+CXX := g++-16
 LIBS := ../../build/libd4.a ../../3rdParty/boost_po/libboost_program_options.a -L/opt/homebrew/lib -lz -lgmpxx -lgmp
 INCLUDES := -I../../ -I/opt/homebrew/include
+else
+LIBS := -Wl,-R../../build/ ../../build/libd4.a -lboost_program_options -lz -lgmpxx -lgmp
+INCLUDES := -I../../
+endif
 
 c: $(BUILD_DIR)/$(EXEC)
 p: $(BUILD_DIR)/$(EXEC)_profile

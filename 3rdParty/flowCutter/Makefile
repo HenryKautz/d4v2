@@ -1,4 +1,4 @@
-CC := g++
+CC := g++-16
 SRC_DIR ?= src
 OBJ_DIR ?= obj
 DEBUG ?= 1

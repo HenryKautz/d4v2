@@ -49,8 +49,10 @@ cd $curRep
 mkdir -p build
 cd build
 
-cmake -GNinja .. -DBUILD_MODE=$opt 
-ninja
+cmake -G "Unix Makefiles" .. -DBUILD_MODE=$opt \
+      -DCMAKE_C_COMPILER=gcc-16 -DCMAKE_CXX_COMPILER=g++-16
+make -j
 
+# macOS libtool -static instead of GNU ar thin-archive/MRI merge (unsupported by macOS ar).
 mv libbipe.a libbipetmp.a
-ar cqT libbipe.a libbipetmp.a ../3rdParty/glucose-3.0/core/libglucose.a && echo -e 'create libbipe.a\naddlib libbipe.a\nsave\nend' | ar -M
+libtool -static -o libbipe.a libbipetmp.a ../3rdParty/glucose-3.0/core/libglucose.a

@@ -1,0 +1,12 @@
+# Correct projected model counts (models over the 'c p show' variables), from an
+# independent dynamic program over truck walks that shares no code with any model
+# counter.  The DP matched sharpSAT on all 20 SimpleGrid problems from 3x3 to 7x7.
+# Each count is the number of walks from p1-1 of H-1 steps (each a move to a grid
+# neighbour or a wait) ending on a goal cell.
+grid8x8-2 7856368
+grid8x8-3 4160312
+grid8x8-4 8536710
+grid9x9-1 16913390
+grid9x9-2 17737109
+grid9x9-3 8095152
+grid9x9-4 10575175

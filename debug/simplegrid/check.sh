@@ -12,6 +12,7 @@
 #   ./check.sh grid8x8-2
 #   ./check.sh -n 10 grid8x8-3 --cache-store-strategy all
 #   D4=~/bin/d4 ./check.sh grid9x9-1
+#   STACK=8192 TAG=small ./check.sh grid9x9-1   # stack limit in KB; TAG names work dirs
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 D4="${D4:-$HERE/../../demo/compiler/build/compiler}"
@@ -22,9 +23,9 @@ cnf="$HERE/cnf/$prob.cnf"
 want="$(awk -v p="$prob" '$1 == p {print $2}' "$HERE/expected-counts.txt")"
 [ -f "$cnf" ] || { echo "no $cnf" >&2; exit 2; }
 [ -n "$want" ] || { echo "no expected count for $prob" >&2; exit 2; }
-ulimit -s hard            # d4 recurses deeply; the default 8 MB stack is too small
+ulimit -s "${STACK:-hard}"   # d4 recurses deeply; STACK=8192 gives the macOS default
 for i in $(seq 1 "$runs"); do
-  w="$HERE/work/$prob-$i"; rm -rf "$w"; mkdir -p "$w"
+  w="$HERE/work/${TAG:+$TAG-}$prob-$i"; rm -rf "$w"; mkdir -p "$w"
   start=$(date +%s)
   "$D4" -i "$cnf" --dump-file "$w/out.nnf" "$@" > "$w/d4.log" 2>&1
   rc=$?

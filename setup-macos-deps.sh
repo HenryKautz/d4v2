@@ -17,11 +17,19 @@
 # Prerequisites (Homebrew):  brew install gcc gmp boost cmake
 #
 # Usage:   ./setup-macos-deps.sh        then    ./build.sh
+#          ./setup-macos-deps.sh --boost-only   (step 2 only; build.sh runs this
+#          itself when Homebrew's Boost no longer matches 3rdParty/boost_po)
 # Override the compiler with e.g.:  CXX=g++-15 ./setup-macos-deps.sh
 
 set -euo pipefail
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CXX=${CXX:-g++-16}
+boost_only=0
+case "${1:-}" in
+  "")           ;;
+  --boost-only) boost_only=1 ;;
+  *)            echo "usage: $0 [--boost-only]" >&2; exit 2 ;;
+esac
 
 die() { echo "setup-macos-deps.sh: $1" >&2; exit 1; }
 
@@ -34,6 +42,7 @@ BREW=$(brew --prefix)
 [ -e "$BREW/include/gmp.h" ] || die "gmp not found under $BREW/include. Run: brew install gmp"
 
 # --- 1. PaToH ---------------------------------------------------------------
+if [ "$boost_only" = 0 ]; then
 ARCH=$(uname -m)
 case "$ARCH" in
   arm64)  PATOH_TGZ=patoh-Darwin-arm64.tar.gz ;;
@@ -52,6 +61,7 @@ src=$(dirname "$lib")
 cp "$src/libpatoh.a" "$SCRIPT_DIR/3rdParty/patoh/libpatoh.a"
 cp "$src/patoh.h"    "$SCRIPT_DIR/3rdParty/patoh/patoh.h"
 echo "   installed 3rdParty/patoh/{libpatoh.a,patoh.h}  ($(lipo -info "$SCRIPT_DIR/3rdParty/patoh/libpatoh.a" 2>/dev/null | sed 's/.*: //'))"
+fi
 
 # --- 2. boost::program_options (built with g++) -----------------------------
 bv=$(sed -n 's/^#define BOOST_VERSION \([0-9]*\).*/\1/p' "$BREW/include/boost/version.hpp")
@@ -70,13 +80,17 @@ for f in cmdline config_file convert options_description parsers \
 done
 (
   cd "$po"
-  rm -f ./*.o
+  rm -f ./*.o libboost_program_options.a BOOST_VERSION
   for f in src/*.cpp; do
     "$CXX" -std=c++20 -O2 -fPIC -I"$BREW/include" -c "$f" -o "$(basename "${f%.cpp}").o"
   done
   ar rcs libboost_program_options.a ./*.o
+  # build.sh compares this with Homebrew's boost/version.hpp to detect a stale
+  # library after a Homebrew Boost upgrade.
+  echo "$bv" > BOOST_VERSION
 )
-echo "   built 3rdParty/boost_po/libboost_program_options.a"
+echo "   built 3rdParty/boost_po/libboost_program_options.a ($TAG)"
+[ "$boost_only" = 1 ] && exit 0
 
 echo
 echo "Dependencies ready.  Now build d4 and the demo counter:"

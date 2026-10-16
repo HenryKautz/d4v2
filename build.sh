@@ -34,6 +34,19 @@ if [ "$(uname)" = "Darwin" ]; then
     GLUCOSE_MAKE_ARGS="CXX=g++-16"
     CMAKE_GEN=(-G "Unix Makefiles" -DCMAKE_C_COMPILER=gcc-16 -DCMAKE_CXX_COMPILER=g++-16)
     CMAKE_BUILD=(make -j)
+
+    # The demos link our g++ build of boost::program_options (3rdParty/boost_po)
+    # but compile against Homebrew's Boost headers.  When Homebrew upgrades Boost
+    # the two no longer match and the link fails with missing boost symbols, so
+    # rebuild the library whenever the version it was built for differs.
+    brew_boost=$(sed -n 's/^#define BOOST_VERSION \([0-9]*\).*/\1/p' \
+                 "$(brew --prefix)/include/boost/version.hpp" 2>/dev/null || true)
+    built_boost=$(cat "$SCRIPT_DIR/3rdParty/boost_po/BOOST_VERSION" 2>/dev/null || true)
+    if [ -z "$brew_boost" ] || [ "$brew_boost" != "$built_boost" ]; then
+        echo ">> 3rdParty/boost_po was built for Boost '${built_boost:-unknown}'," \
+             "Homebrew has '${brew_boost:-none}': rebuilding it"
+        "$SCRIPT_DIR/setup-macos-deps.sh" --boost-only
+    fi
 else
     FLOW_MAKE_ARGS=""
     GLUCOSE_MAKE_ARGS=""

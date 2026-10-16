@@ -69,8 +69,10 @@ cache headers/allocator at these sizes.
 ### Upstream
 
 The `ListLit` bug and the bitmap off-by-one are in the original d4v2 code.
-A ready-to-file report is in `debug/upstream-issue.md`; it suggests replacing
-the hand-written pool with a per-list `std::vector<Lit>` (the fragile part).
+Reported upstream as https://github.com/crillab/d4v2/issues/14 (text in
+`debug/upstream-issue.md`); it suggests replacing the hand-written pool with a
+per-list `std::vector<Lit>` (the fragile part).  The same report notes that
+upstream issue #3 no longer reproduces with current `main`.
 
 `~/bin/d4` (what FiFO runs) was replaced with the fixed build on 2026-10-16.
 `demo/compiler/build/compiler.orig` is the old buggy build, kept for

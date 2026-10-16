@@ -54,6 +54,7 @@ ListLit::ListLit(const Lit *tab, int size) {
  * @brief ListLit::ListLit implementation.
  */
 ListLit::~ListLit() {
+  if (!m_array) return;  // empty list (setSize(0)/setArray(NULL)): no block
   while (s_availaible.size() <= m_size)
     s_availaible.push_back(std::vector<Lit *>());
   s_availaible[m_size].push_back(m_array);
@@ -63,17 +64,25 @@ ListLit::~ListLit() {
  * @brief ListLit::setListLit implementation.
  */
 void ListLit::setListLit(const Lit *tab, int size) {
-  assert(size < SIZE_PAGE_LIST_LIT);
   if (size < s_availaible.size() && s_availaible[size].size()) {
     m_array = s_availaible[size].back();
     s_availaible[size].pop_back();
     m_size = size;
+  } else if (size > SIZE_PAGE_LIST_LIT) {
+    // Larger than a page: give it a block of its own (pooled under its size
+    // like any other once released).
+    m_array = new Lit[size];
+    s_pages.push_back(m_array);
+    m_size = size;
   } else {
     if (!s_currentPage || s_posPage + size > SIZE_PAGE_LIST_LIT) {
-      if (s_currentPage) {
-        while (s_availaible.size() <= size)
+      // Recycle the unused tail of the current page under its own length
+      // (none when the page is exactly full).
+      unsigned rest = s_currentPage ? SIZE_PAGE_LIST_LIT - s_posPage : 0;
+      if (rest) {
+        while (s_availaible.size() <= rest)
           s_availaible.push_back(std::vector<Lit *>());
-        s_availaible[size].push_back(&s_currentPage[s_posPage]);
+        s_availaible[rest].push_back(&s_currentPage[s_posPage]);
       }
 
       s_currentPage = new Lit[SIZE_PAGE_LIST_LIT];

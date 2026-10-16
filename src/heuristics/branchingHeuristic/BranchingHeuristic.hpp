@@ -25,6 +25,10 @@
 namespace d4 {
 const unsigned SIZE_PAGE_LIST_LIT = 1 << 10;
 
+// Lists of literals carved from shared pages.  Invariant: a block in
+// s_availaible[n] holds exactly n literals; the destructor returns m_array
+// under m_size, so m_size must always be the size of the block m_array points
+// to.
 class ListLit {
  private:
   static unsigned s_posPage;
@@ -40,6 +44,10 @@ class ListLit {
   ListLit();
   ListLit(const Lit *tab, int size);
   virtual ~ListLit();
+
+  // A copy would return the same block to the pool twice.
+  ListLit(const ListLit &) = delete;
+  ListLit &operator=(const ListLit &) = delete;
 
   void setListLit(const Lit *tab, int size);
 

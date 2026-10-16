@@ -310,7 +310,8 @@ class BucketManagerCnfCl : public BucketManagerCnf<T> {
     // info about the variables.
     ret.nbBitEltVar = this->nbBitUnsigned(component.back());
     ret.nbByteStoreVar = 1 + (((ret.nbBitEltVar * component.size()) - 1) >> 3);
-    unsigned nbByteModeArray = 1 + ((component.back() - 1) >> 3);
+    // storeVariables sets bit v of the array, so bits 0..back are needed.
+    unsigned nbByteModeArray = 1 + (component.back() >> 3);
 
     // check if we can use a bit representation of the variables.
     if (nbByteModeArray < ret.nbByteStoreVar) {
